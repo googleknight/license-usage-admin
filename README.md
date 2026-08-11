@@ -5,6 +5,25 @@ pagination, a detail drawer, and a validated seat-allowance edit.
 
 Next.js 16 (App Router), TypeScript, Tailwind CSS 4, shadcn/ui.
 
+## Screenshots
+
+The list view: status and plan badges, seat utilisation, and an over-provisioned account
+(seats used above allowed) called out in red.
+
+![License usage list](docs/screenshots/table.jpg)
+
+Clicking a row opens a detail drawer with the full record, the fields left out of the table
+(account owner, created date, notes), and the validated seat-allowance edit.
+
+![Detail drawer](docs/screenshots/drawer.jpg)
+
+Every state is handled, not just the happy path:
+
+| | |
+| --- | --- |
+| Validation error, save disabled ![Validation](docs/screenshots/validation.jpg) | No search matches, with a clear action ![No matches](docs/screenshots/empty-no-matches.jpg) |
+| Loading skeleton, so layout does not jump ![Loading](docs/screenshots/loading.jpg) | Fetch failure, recoverable ![Error](docs/screenshots/error.jpg) |
+
 ## Running it
 
 Requires [Bun](https://bun.sh) 1.3+ and Node 20.9+, the floor Next.js 16 sets.
