@@ -3,51 +3,38 @@
 An internal admin screen listing customer license records, with search, filtering, sorting,
 pagination, a detail drawer, and a validated seat-allowance edit.
 
-Built with Next.js 16 (App Router), TypeScript, Tailwind CSS 4, and shadcn/ui.
-
----
+Next.js 16 (App Router), TypeScript, Tailwind CSS 4, shadcn/ui.
 
 ## Running it
 
-Requires [Bun](https://bun.sh) 1.3 or later and Node 20.9 or later, the floor Next.js 16 sets.
+Requires [Bun](https://bun.sh) 1.3+ and Node 20.9+, the floor Next.js 16 sets.
 
 ```bash
 bun install
-bun run dev
+bun run dev   # http://localhost:3000
 ```
 
-Then open http://localhost:3000.
+Also available: `bun run build`, `bun run start`, `bun run lint`, `bun test`,
+`bun run generate:fixtures`.
 
-| Command | What it does |
-| --- | --- |
-| `bun run dev` | Development server |
-| `bun run build` | Production build |
-| `bun run start` | Serve the production build |
-| `bun run lint` | ESLint |
-| `bun test` | Unit tests |
-| `bun run generate:fixtures` | Regenerate the mock dataset |
-
-### Exercising the loading and error states
+### Reaching every state
 
 A mock API that always succeeds leaves the error path unreachable, so failure is triggerable
 on demand:
 
 | State | How to reach it |
 | --- | --- |
-| Loading | Reload the page. The list route delays 400 ms deliberately. |
-| Fetch error | Open [`/?fail=1`](http://localhost:3000/?fail=1). The list route returns a 500. |
-| Empty, no data | Open [`/?empty=1`](http://localhost:3000/?empty=1). The list route returns no records. |
+| Loading | Reload. The list route delays 400 ms deliberately. |
+| Fetch error | [`/?fail=1`](http://localhost:3000/?fail=1) |
+| Empty, no data | [`/?empty=1`](http://localhost:3000/?empty=1) |
 | Empty, no matches | Search for a string no customer matches. |
-| Validation errors | In the drawer, enter `-1`, `12.5`, `abc`, or any value below the seats already in use. |
-| Save failure | Open [`/?failSave=1`](http://localhost:3000/?failSave=1), then save a seat change. The list still loads. |
+| Validation errors | In the drawer, enter `-1`, `12.5`, `abc`, or a value below seats in use. |
+| Save failure | [`/?failSave=1`](http://localhost:3000/?failSave=1), then save a seat change. |
 
-Each flag is forwarded from the page URL to the mock API, so `GET /api/licenses?fail=1`,
-`GET /api/licenses?empty=1`, and `PATCH /api/licenses/:id?fail=1` produce the same responses
-directly, if you would rather hit the API than the UI.
+Each flag is forwarded to the mock API, so `GET /api/licenses?fail=1` and
+`PATCH /api/licenses/:id?fail=1` behave the same if you would rather hit the API directly.
 
----
-
-## How it is put together
+## Structure
 
 ```
 src/
@@ -60,114 +47,59 @@ src/
   lib/licenses/                  types, fixtures, store, query, validation, formatting
 ```
 
-The layering is deliberate: everything in `lib/licenses/` is pure and framework-free, which is
-what makes the filtering, sorting, and validation logic directly testable without rendering
-anything.
+Everything in `lib/licenses/` is pure and framework-free, which is what makes the filtering,
+sorting, and validation logic testable without rendering anything.
 
-### Decisions worth explaining
+## Decisions
 
-**Route Handlers rather than a static import.** The exercise allowed either. A static import
-would have meant simulating the loading and error states, which are part of what needs
-demonstrating. Serving the data over HTTP makes them real, and better reflects how a data layer
-would actually be structured.
+- **Route Handlers rather than a static import.** Either was allowed; serving over HTTP makes the
+  loading and error states real instead of simulated.
+- **Plain hooks rather than React Query.** One fetch and one mutation do not justify a cache
+  layer, and hand-written pending/error handling is part of what needs showing.
+- **List state lives in the URL.** Search, filters, sort, and page are search params, so views are
+  shareable and refresh is lossless. Pagination resets to page 1 when the result set narrows.
+- **The Suspense fallback is a real skeleton, not `null`.** `useSearchParams` cannot prerender, so
+  the fallback is the markup that ships in the static HTML until hydration. Column widths are
+  pinned in one shared place so the skeleton and the real rows line up.
+- **Saving is pessimistic.** The form waits for the server, disables while in flight, and surfaces
+  failures inline without discarding input.
+- **The seats column sorts by utilisation** (used ÷ allowed), which is what surfaces over- and
+  under-provisioned accounts. Some fixtures deliberately exceed their allowance, as happens after
+  a downgrade.
+- **Dates are formatted with a fixed locale in UTC**, to avoid a hydration mismatch. A correctness
+  fix, not i18n support.
 
-**Plain hooks rather than React Query or SWR.** One list fetch and one mutation do not justify a
-cache layer. Writing the loading, error, and pending handling by hand keeps it visible rather
-than delegated to a library, which is the point here.
-
-**List state lives in the URL.** Search, filters, sort, and page are held in search params rather
-than component state. Views become shareable, the back button works, and a refresh is lossless.
-Pagination resets to page 1 whenever the result set narrows, so nobody lands on a page that no
-longer exists.
-
-**The Suspense fallback is a real skeleton, not `null`.** Holding list state in the URL means the
-list reads `useSearchParams`, which nothing can prerender, so on a static route it bails that
-subtree out to client rendering and the build refuses to proceed without a `Suspense` boundary.
-The fallback is not a spinner for a network wait: it is the markup that ships in the static HTML
-until hydration swaps it out, so an empty fallback would mean a blank first paint. The page frame
-and heading are therefore kept above the boundary where they can prerender, and the fallback below
-it mirrors the loading table. Column widths are pinned in one shared place so the skeleton and the
-real rows agree, which also removes a sideways jump the loading state used to have.
-
-**Saving is pessimistic.** The form waits for the server, stays disabled while in flight, and
-surfaces failures inline without discarding input. An optimistic update would have hidden exactly
-the state handling worth showing.
-
-**The seats column sorts by utilisation** (used ÷ allowed) rather than by raw allowance, since
-utilisation is what surfaces over- and under-provisioned accounts. Some fixture records
-deliberately have more seats in use than allowed, as happens after a downgrade, and the table
-flags them.
-
-**Dates are formatted with a fixed locale in UTC.** Using the ambient locale renders differently
-on the server and the client, which produces a hydration mismatch. That is a correctness fix, not
-internationalisation support.
-
-### Honest caveat about persistence
-
-Writes mutate a module-level array behind the route handler. That resets when the server
-restarts and is not safe across multiple workers. It is a mock, not a store, and nothing here
-should be read as working persistence.
-
----
+**Persistence is fake.** Writes mutate a module-level array behind the route handler, which resets
+on restart and is not safe across workers. Nothing here should be read as working persistence.
 
 ## Testing
 
-Tests cover the pure logic, where the bugs that matter actually live:
+`bun test` covers the pure logic: `query.test.ts` for search matching, facet combination (OR
+within a facet, AND across facets), every sort key including a zero allowance, sort stability, and
+pagination clamping; `validation.test.ts` for the seat rules. No component or end-to-end tests yet.
 
-- `src/lib/licenses/query.test.ts` covers search matching, facet combination (OR within a facet,
-  AND across facets), every sort key including the utilisation edge case of a zero allowance,
-  sort stability, and pagination clamping.
-- `src/lib/licenses/validation.test.ts` covers the seat rules: empty, non-numeric, exponent
-  notation, decimals, negatives, below seats in use, and the upper bound.
+## Priorities and gaps
 
-```bash
-bun test
-```
-
-There are no component or end-to-end tests. See below.
-
----
-
-## What was prioritised, and what is missing
-
-Given the time budget, the priority was correct structure and complete state handling over
-feature count: a clean separation between pure logic and presentation, real types throughout, and
-every state reachable rather than only the happy path. The two empty states are kept distinct,
-since "no licenses exist" and "your filters matched nothing" need different copy and different
-actions.
+The priority was correct structure and complete state handling over feature count: pure logic
+separated from presentation, real types throughout, and every state reachable. The two empty
+states are kept distinct, since "no licenses exist" and "your filters matched nothing" need
+different copy and different actions.
 
 With another hour or two:
 
-1. **Component tests** for the drawer and the seats form, driving the validation rules through
-   the actual DOM rather than only the validator.
-2. **An end-to-end test** covering the filter, open, edit, save path.
-3. **Keyboard and screen reader polish.** Rows are focusable and open the drawer on Enter, but
-   they carry `role="button"`, which overrides the native `row` role and costs screen reader
-   table navigation. Keeping it was the right call for now, since an activatable row that does
-   not announce itself is the worse failure, but the proper fix is a real focusable control in
-   the first cell, which preserves both. Result count changes after filtering should also be
-   announced.
-4. **A mobile layout.** It is desktop-first as an internal admin screen. It does not break on
-   narrow screens, but it was not designed for them.
-5. **Optimistic updates with rollback**, once the pessimistic path is proven.
-
-Deliberately out of scope, with reasoning, in [`requirements/scope.md`](requirements/scope.md).
-
----
+1. Component tests for the drawer and seats form, driving validation through the DOM.
+2. An end-to-end test over the filter, open, edit, save path.
+3. Accessibility polish. Rows are focusable and open on Enter, but `role="button"` overrides the
+   native `row` role and costs screen reader table navigation. The proper fix is a focusable
+   control in the first cell, which preserves both. Result counts should also be announced.
+4. A mobile layout. Desktop-first as an internal admin screen; it does not break on narrow
+   screens but was not designed for them.
+5. Optimistic updates with rollback, once the pessimistic path is proven.
 
 ## Time spent
 
-About two hours in total, inside the 2 to 3 hour budget.
+About two hours, inside the 2 to 3 hour budget. Roughly half an hour went to scoping and the
+implementation plan before any code, which is what kept the layering consistent.
 
-Roughly half an hour of that went to scoping and writing the implementation plan before any code
-was written, and the rest to the build itself. Front-loading the plan is what kept the layering
-consistent and made the pure logic straightforward to test, so it is counted as work rather than
-overhead.
-
----
-
-## Project documents
-
-- [`requirements/scope.md`](requirements/scope.md) covers what is being built, the assumptions
-  taken where the requirements left room, and what was excluded on purpose.
-- [`plans/`](plans) holds the task-by-task implementation plan the build follows.
+See [`requirements/scope.md`](requirements/scope.md) for assumptions and deliberate exclusions,
+and [`plans/`](plans) for the task-by-task plan the build follows.
