@@ -14,7 +14,32 @@
 - **Next.js version floor:** 16.3.0. This differs from older App Router conventions. **Read the relevant guide under `node_modules/next/dist/docs/` before writing framework code**, per the generated `AGENTS.md`. Do not write route handlers or async params from memory.
 - **TypeScript:** `strict: true`. No `any`. No non-null assertions (`!`) on values that can genuinely be absent.
 - **Styling:** Tailwind 4 + shadcn/ui only. No second styling system, no inline `<style>`, no CSS-in-JS.
-- **No new runtime dependencies** beyond shadcn/ui primitives and their Radix peers. No state library, no data-fetching library, no date library, no test framework (Bun has one built in). One devDependency is required: `@types/bun`, without which `bun:test` imports have no ambient types and `bunx tsc --noEmit` fails repo-wide. Install it with `bun add -d @types/bun` before the first test file lands.
+- **No new runtime dependencies** beyond shadcn/ui primitives and their peers. No state library, no data-fetching library, no date library, no test framework (Bun has one built in). One devDependency is required: `@types/bun`, without which `bun:test` imports have no ambient types and `bunx tsc --noEmit` fails repo-wide. Install it with `bun add -d @types/bun` before the first test file lands.
+
+> **Corrected during Task 7:** the current shadcn CLI generates primitives built on **Base UI**
+> (`@base-ui/react`), not Radix. Earlier drafts of this plan said Radix. See "Primitive API notes"
+> below before writing any component that consumes a shadcn primitive.
+
+### Primitive API notes (verified against the generated code, not assumed)
+
+| Primitive | What actually applies |
+| --- | --- |
+| `Select` | `value` and `onValueChange` both exist on the root and work as this plan uses them. `SelectValue` does **not** accept a `placeholder` prop, unlike the Radix version. |
+| `Checkbox` | `checked` and `onCheckedChange` both exist. `onCheckedChange` receives `(checked: boolean, eventDetails)`, so an arity-1 handler is fine. |
+| `Sheet` | `SheetContent` takes `side`, defaulting to `"right"`. It already applies `sm:max-w-sm` on the right side, so an extra `sm:max-w-md` will conflict. Prefer overriding with a single width class or accept the default. |
+| `Popover` | Also exports `PopoverHeader`, `PopoverTitle`, `PopoverDescription`, unused here. |
+| `Table` | All of `Table`, `TableHeader`, `TableBody`, `TableHead`, `TableRow`, `TableCell` exist as this plan uses them. |
+
+**Dark mode is inert.** shadcn replaced the scaffold's `prefers-color-scheme` media query with a
+class-based `@custom-variant dark (&:is(.dark *))`, and nothing adds a `dark` class to `<html>`.
+The `dark:` variants in the badge components are harmless and would activate if a theme toggle
+were added later. Not worth fixing: visual design is out of scope, and the fix means editing
+`layout.tsx`.
+
+**Extra dependencies shadcn added,** all primitive peers and within budget:
+`@base-ui/react`, `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-react`,
+`tw-animate-css`, and `shadcn` itself (a genuine runtime dependency, since `globals.css` now does
+`@import "shadcn/tailwind.css"`).
 - **Dataset size:** 50 fixture records.
 - **"Expiring Soon" window:** 30 days.
 - **Seats upper bound:** `100000`.
