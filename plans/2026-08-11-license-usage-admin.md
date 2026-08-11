@@ -1836,11 +1836,18 @@ git commit -m "feat: add debounced search and multi-select facet filters"
 - Consumes: `License`, `SortField`, `LicenseQueryResult`, badges from Task 7, `formatDate`, `formatUtilization`, `isOverProvisioned`, `PAGE_SIZES`
 - Produces: `<LicenseTable rows sortField sortDirection onSort onRowClick isLoading />`, `<LicensePagination result pageSize onPageChange onPageSizeChange />`
 
-> **Open accessibility decision, not yet resolved.** The rows carry `role="button"` so the
-> `aria-label` is announced. The cost is that this overrides the native `row` role, so cells lose
-> their grid context and screen reader table navigation degrades. The alternatives are to drop
-> `role="button"` and keep `tabIndex` plus the key handler, or to put a real focusable control in
-> the first cell. Implemented as specified for now, flagged for a decision at review.
+> **Accessibility decision, resolved: keep `role="button"` on the row.**
+>
+> The tradeoff is real. `role="button"` overrides the native `row` role, so cells lose their grid
+> context and screen reader table navigation degrades. It was kept anyway because the row's whole
+> purpose here is to be activated: it opens the detail drawer, and that affordance needs to be
+> announced and reachable by keyboard. A row that is focusable and responds to Enter but reports
+> itself as a plain `row` is the worse failure, since the interaction becomes invisible to anyone
+> not using a mouse.
+>
+> The better long-term fix is a real focusable control in the first cell, which keeps both the
+> grid semantics and the affordance. That is a layout change, out of scope here, and recorded in
+> the README as a next step.
 
 - [ ] **Step 1: Write the table**
 

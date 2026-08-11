@@ -11,8 +11,11 @@ adopting it for its own sake.
 - Bootstrap with `create-next-app`, TypeScript + App Router + Tailwind + ESLint. This gives
   Vercel's own defaults: `tsconfig` with `strict: true`, ESLint flat config, `next/font`.
 - Node 18.18+ (Next.js 16 requirement). Turbopack is the default dev bundler, no config needed.
-- Keep `strict: true` and `noUncheckedIndexedAccess: true` in `tsconfig`. Real types for the
+- Keep `strict: true` in `tsconfig`, which `create-next-app` sets for us. Real types for the
   data model and props, no `any`.
+- `noUncheckedIndexedAccess` is **not** enabled. `create-next-app` does not add it, and turning
+  it on would force optional-handling on every array index across the query and fixture code for
+  no real safety gain at this size. Called out here so its absence reads as a decision.
 
 ## Conventions we DO apply (they fit this app)
 
@@ -23,8 +26,12 @@ adopting it for its own sake.
    font request.
 3. **Typed `metadata` export** in the root layout (title, description). This is the App Router
    replacement for hand-managed `<head>`; cheap to do correctly.
-4. **`loading.tsx` / `Suspense` for the loading state**, plus explicit empty and error UI in the
-   table itself. Covers requirement 6 without inventing spinners by hand everywhere.
+4. **Skeleton rows for the loading state**, plus explicit empty and error UI in the table itself.
+   Note that `loading.tsx` is deliberately *not* used: it covers server-side route segment
+   loading, and this data is fetched client-side, so it would never fire for the fetch. Skeleton
+   rows matching the table layout also stop the page jumping when data lands, which a spinner
+   does not. The `Suspense` boundary in `page.tsx` exists for `useSearchParams`, which is a
+   separate requirement: without it, a statically prerendered route fails the production build.
 5. **Hydration-safe dates.** Store dates as ISO `YYYY-MM-DD`, format with a fixed locale and
    `timeZone: "UTC"`. Prevents the classic SSR/client date mismatch.
 6. **Client/server boundary is explicit.** The interactive table is a Client Component

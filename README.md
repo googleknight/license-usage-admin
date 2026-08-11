@@ -129,19 +129,17 @@ With another hour or two:
 1. **Component tests** for the drawer and the seats form, driving the validation rules through
    the actual DOM rather than only the validator.
 2. **An end-to-end test** covering the filter, open, edit, save path.
-3. **Keyboard and screen reader polish**, particularly announcing result count changes after
-   filtering.
+3. **Keyboard and screen reader polish.** Rows are focusable and open the drawer on Enter, but
+   they carry `role="button"`, which overrides the native `row` role and costs screen reader
+   table navigation. Keeping it was the right call for now, since an activatable row that does
+   not announce itself is the worse failure, but the proper fix is a real focusable control in
+   the first cell, which preserves both. Result count changes after filtering should also be
+   announced.
 4. **A mobile layout.** It is desktop-first as an internal admin screen. It does not break on
    narrow screens, but it was not designed for them.
 5. **Optimistic updates with rollback**, once the pessimistic path is proven.
 
 Deliberately out of scope, with reasoning, in [`requirements/scope.md`](requirements/scope.md).
-
----
-
-## Time spent
-
-Roughly TODO hours in total, including planning and this write-up.
 
 ---
 
