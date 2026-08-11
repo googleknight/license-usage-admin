@@ -6,7 +6,7 @@ import type { License } from "./types";
  * This resets whenever the server restarts and is not safe across multiple
  * workers. Adequate for an exercise, but it is a mock, not a store.
  */
-let licenses: License[] = LICENSE_FIXTURES.map((license) => ({ ...license }));
+const licenses: License[] = LICENSE_FIXTURES.map((license) => ({ ...license }));
 
 export function getAllLicenses(): License[] {
   return licenses.map((license) => ({ ...license }));
@@ -27,9 +27,4 @@ export function setSeatsAllowed(id: string, seatsAllowed: number): License | und
   const updated: License = { ...current, seatsAllowed };
   licenses[index] = updated;
   return { ...updated };
-}
-
-/** Test and development helper: restores the fixture state. */
-export function resetStore(): void {
-  licenses = LICENSE_FIXTURES.map((license) => ({ ...license }));
 }

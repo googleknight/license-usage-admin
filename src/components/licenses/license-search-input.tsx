@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 
-const DEBOUNCE_MS = 250;
+const DEBOUNCE_MS = 400;
 
 /**
  * Keeps the typed value in local state so the field stays responsive, and
@@ -38,7 +38,8 @@ export function LicenseSearchInput({
     onChangeRef.current(debounced);
   }, [debounced]);
 
-  // Re-sync when the URL changes from outside, e.g. the back button.
+  // Re-sync when the committed value changes from outside this input, e.g. a
+  // shared or refreshed URL that arrives with a search already set.
   useEffect(() => {
     if (value === lastReported.current) return;
     lastReported.current = value;

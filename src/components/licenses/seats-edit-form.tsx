@@ -4,7 +4,7 @@ import { useId, useState, type FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { saveSeatsAllowed } from "@/hooks/use-licenses";
+import { saveSeatsAllowed } from "@/lib/licenses/api";
 import { validateSeatsAllowed } from "@/lib/licenses/validation";
 import type { License } from "@/lib/licenses/types";
 

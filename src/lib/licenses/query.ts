@@ -8,7 +8,6 @@ import {
 } from "./types";
 
 export const PAGE_SIZES = [10, 25, 50] as const;
-export type PageSize = (typeof PAGE_SIZES)[number];
 
 /**
  * Renewal date ascending: the soonest expiry is why an admin opens this screen.

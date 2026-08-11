@@ -43,12 +43,13 @@ src/
     api/licenses/[id]/route.ts   PATCH seats allowed
     page.tsx                     server shell: page frame, heading, Suspense boundary
   components/licenses/           table, toolbar, drawer, badges, states, prerender fallback
-  hooks/                         URL params, debounce, data fetching
-  lib/licenses/                  types, fixtures, store, query, validation, formatting
+  hooks/                         URL list state, debounce, data fetching
+  lib/licenses/                  types, fixtures, store, query, validation, formatting, params, api
 ```
 
-Everything in `lib/licenses/` is pure and framework-free, which is what makes the filtering,
-sorting, and validation logic testable without rendering anything.
+The data model, query, validation, formatting, and URL `params` parsing in `lib/licenses/` are
+pure and framework-free, which is what makes them testable without rendering anything. `api.ts` is
+the one browser-facing module (the two `fetch` calls); the hooks stay thin wrappers over it.
 
 ## Decisions
 
@@ -76,7 +77,9 @@ on restart and is not safe across workers. Nothing here should be read as workin
 
 `bun test` covers the pure logic: `query.test.ts` for search matching, facet combination (OR
 within a facet, AND across facets), every sort key including a zero allowance, sort stability, and
-pagination clamping; `validation.test.ts` for the seat rules. No component or end-to-end tests yet.
+pagination clamping; `validation.test.ts` for the seat rules; `params.test.ts` for URL parsing,
+which tolerates hand-edited params (`?status=Bogus`, `?size=999`, `?page=-1`, duplicate statuses)
+and round-trips a query through serialise and parse. No component or end-to-end tests yet.
 
 ## Priorities and gaps
 
@@ -96,10 +99,26 @@ With another hour or two:
    screens but was not designed for them.
 5. Optimistic updates with rollback, once the pessimistic path is proven.
 
+Two deliberate small behaviours worth naming rather than hiding:
+
+- **The pagination footer is hidden while the list is loading** and appears with the rows. During
+  loading there is no real page count to show, so a placeholder footer would only pop or report
+  the wrong totals. The table rows themselves use a skeleton so their layout does not jump.
+- **An out-of-range page is clamped for display but not rewritten in the URL.** `?page=99` on a
+  three-page result renders page 3 and the footer reads "Page 3 of 3", while the URL still says
+  99. This avoids a redirect on mount; the clamp lives in the pure `queryLicenses`.
+
 ## Time spent
 
-About two hours, inside the 2 to 3 hour budget. Roughly half an hour went to scoping and the
-implementation plan before any code, which is what kept the layering consistent.
+About two and a half hours of active development, plus a further 30 to 45 minutes on review fixes
+and keeping the docs in step with the code. Roughly half an hour of the build time went to scoping
+and the implementation plan before any code, which is what kept the layering consistent.
+
+That puts the total a little past the 2 to 3 hour budget. The overrun is all in the review pass:
+extracting the URL parsing into a pure, tested module, moving the two `fetch` calls out of `hooks/`
+into `lib/licenses/api.ts`, and correcting comments that had drifted from what the code actually
+does.
 
 See [`requirements/scope.md`](requirements/scope.md) for assumptions and deliberate exclusions,
-and [`plans/`](plans) for the task-by-task plan the build follows.
+and [`plans/`](plans) for the task-by-task plan the build followed, including the framework
+findings and the deviations made along the way.
