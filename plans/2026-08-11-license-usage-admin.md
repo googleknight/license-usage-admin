@@ -22,13 +22,55 @@
 
 ### Primitive API notes (verified against the generated code, not assumed)
 
+**There is no `asChild`.** This is the single biggest difference from Radix. Base UI composes
+through a `render` prop instead, and children move onto the outer element:
+
+```tsx
+// Radix idiom, does not work here:
+<PopoverTrigger asChild><Button variant="outline">Status</Button></PopoverTrigger>
+
+// Base UI idiom, and what the generated select.tsx and sheet.tsx already use:
+<PopoverTrigger render={<Button variant="outline" />}>Status</PopoverTrigger>
+```
+
 | Primitive | What actually applies |
 | --- | --- |
-| `Select` | `value` and `onValueChange` both exist on the root and work as this plan uses them. `SelectValue` does **not** accept a `placeholder` prop, unlike the Radix version. |
-| `Checkbox` | `checked` and `onCheckedChange` both exist. `onCheckedChange` receives `(checked: boolean, eventDetails)`, so an arity-1 handler is fine. |
-| `Sheet` | `SheetContent` takes `side`, defaulting to `"right"`. It already applies `sm:max-w-sm` on the right side, so an extra `sm:max-w-md` will conflict. Prefer overriding with a single width class or accept the default. |
-| `Popover` | Also exports `PopoverHeader`, `PopoverTitle`, `PopoverDescription`, unused here. |
+| `Select` | `value` and `onValueChange` both work on the root. `onValueChange` is typed `(value: string \| null, eventDetails)`, so **guard the null case**: `Number(null)` silently yields `0`. `SelectItem` takes `value?: any`. |
+| `Checkbox` | `checked` and `onCheckedChange` both exist. The handler receives `(checked: boolean, eventDetails)`, so a zero- or one-arg handler is fine. Wrapping a `Checkbox` in its `Label` does not double-toggle: the root calls `preventDefault()` and re-dispatches to the hidden input. |
+| `Sheet` | Wraps Base UI `Dialog`, not Radix. `SheetContent` takes `side`, defaulting to `"right"`. `modal` defaults to true, so the focus trap, Escape to close, and focus restoration are all automatic. |
+| `Popover` | `PopoverContent` accepts `align`, `alignOffset`, `side`, `sideOffset`. `PopoverTrigger` does **not** accept `asChild`, see above. |
 | `Table` | All of `Table`, `TableHeader`, `TableBody`, `TableHead`, `TableRow`, `TableCell` exist as this plan uses them. |
+| `Button` | `type` defaults to `"button"` but caller props win in `mergeProps`, so `type="submit"` does fire form submission. |
+
+> **Correction:** an earlier revision of this table claimed `SelectValue` does not accept
+> `placeholder`. That is wrong for the installed `@base-ui/react`: it does accept it, and the
+> shadcn wrapper passes it through.
+
+### Two Tailwind 4 traps, both verified empirically rather than assumed
+
+**`outline-none` silently kills an `outline-*` focus ring.** Tailwind 4's `outline-none` sets
+`--tw-outline-style: none`, and `focus-visible:outline-2` emits
+`outline-style: var(--tw-outline-style)`, so the outline resolves to `none` despite a 2px width.
+The shadcn primitives pair `outline-none` with `ring-*`, not `outline-*`, which is why they get
+away with it. Do not combine `outline-none` with an `outline-*` focus ring.
+
+**tailwind-merge does not dedupe across different variant prefixes.** `cn` is
+`twMerge(clsx(...))`, so `sm:max-w-md` and `data-[side=right]:sm:max-w-sm` both survive the merge
+and the winner falls to stylesheet source order, not class order. To override a prefixed class,
+match its prefix exactly: `data-[side=right]:sm:max-w-md`.
+
+### React 19 lint rule that bit twice
+
+`react-hooks/set-state-in-effect` rejects a synchronous `setState` in an effect body as a
+cascading render. It hit `use-licenses.ts` and `seats-edit-form.tsx`. Two working patterns:
+
+- **Reset in the event handler instead.** `refetch` sets `loading` then bumps the attempt counter,
+  so the effect never needs to.
+- **Remount with a `key`.** `<SeatsEditForm key={license.id} />` resets the draft on record
+  change without an effect at all.
+
+A `setState` guarded behind an early return does not trigger the rule, which is why the search
+input's two-effect re-sync is fine as written.
 
 **Dark mode is inert.** shadcn replaced the scaffold's `prefers-color-scheme` media query with a
 class-based `@custom-variant dark (&:is(.dark *))`, and nothing adds a `dark` class to `<html>`.
@@ -1793,6 +1835,12 @@ git commit -m "feat: add debounced search and multi-select facet filters"
 **Interfaces:**
 - Consumes: `License`, `SortField`, `LicenseQueryResult`, badges from Task 7, `formatDate`, `formatUtilization`, `isOverProvisioned`, `PAGE_SIZES`
 - Produces: `<LicenseTable rows sortField sortDirection onSort onRowClick isLoading />`, `<LicensePagination result pageSize onPageChange onPageSizeChange />`
+
+> **Open accessibility decision, not yet resolved.** The rows carry `role="button"` so the
+> `aria-label` is announced. The cost is that this overrides the native `row` role, so cells lose
+> their grid context and screen reader table navigation degrades. The alternatives are to drop
+> `role="button"` and keep `tabIndex` plus the key handler, or to put a real focusable control in
+> the first cell. Implemented as specified for now, flagged for a decision at review.
 
 - [ ] **Step 1: Write the table**
 
