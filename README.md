@@ -54,8 +54,8 @@ src/
   app/
     api/licenses/route.ts        GET list
     api/licenses/[id]/route.ts   PATCH seats allowed
-    page.tsx                     server shell
-  components/licenses/           table, toolbar, drawer, badges, states
+    page.tsx                     server shell: page frame, heading, Suspense boundary
+  components/licenses/           table, toolbar, drawer, badges, states, prerender fallback
   hooks/                         URL params, debounce, data fetching
   lib/licenses/                  types, fixtures, store, query, validation, formatting
 ```
@@ -79,6 +79,15 @@ than delegated to a library, which is the point here.
 than component state. Views become shareable, the back button works, and a refresh is lossless.
 Pagination resets to page 1 whenever the result set narrows, so nobody lands on a page that no
 longer exists.
+
+**The Suspense fallback is a real skeleton, not `null`.** Holding list state in the URL means the
+list reads `useSearchParams`, which nothing can prerender, so on a static route it bails that
+subtree out to client rendering and the build refuses to proceed without a `Suspense` boundary.
+The fallback is not a spinner for a network wait: it is the markup that ships in the static HTML
+until hydration swaps it out, so an empty fallback would mean a blank first paint. The page frame
+and heading are therefore kept above the boundary where they can prerender, and the fallback below
+it mirrors the loading table. Column widths are pinned in one shared place so the skeleton and the
+real rows agree, which also removes a sideways jump the loading state used to have.
 
 **Saving is pessimistic.** The form waits for the server, stays disabled while in flight, and
 surfaces failures inline without discarding input. An optimistic update would have hidden exactly

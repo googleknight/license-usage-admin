@@ -102,15 +102,17 @@ src/
   app/
     api/licenses/route.ts              GET list, supports ?fail=1
     api/licenses/[id]/route.ts         PATCH seats allowed, supports ?fail=1
-    page.tsx                           server shell, renders <LicensePage />
+    page.tsx                           server shell: frame, heading, Suspense boundary
     layout.tsx                         (exists) metadata only
   components/
     licenses/
       license-page.tsx                 client root: owns fetch state, composes everything
+      license-page-fallback.tsx        static stand-in shipped in the prerendered HTML
       license-toolbar.tsx              search input + status/plan filters + clear
       license-search-input.tsx         debounced text input
       license-facet-filter.tsx         reusable multi-select popover for one facet
       license-table.tsx                table, sortable headers, row click
+      license-table-columns.ts         column labels and pinned widths, shared
       license-table-skeleton.tsx       loading rows
       license-pagination.tsx           page controls + page size
       license-detail-drawer.tsx        right drawer, full record + seats form
@@ -2271,6 +2273,11 @@ git commit -m "feat: add detail drawer with validated seats edit form"
 
 - [x] **Step 1: Write the client root**
 
+> **Corrected after the build.** The snippet below wraps everything in `<main>` with the heading
+> inside the client root. That markup moved up into `src/app/page.tsx`, so the frame and heading
+> can be prerendered instead of sitting below the Suspense boundary that bails out to client
+> rendering. `LicensePage` now returns a fragment. See the note on Step 2 for why.
+
 Create `src/components/licenses/license-page.tsx`:
 
 ```tsx
@@ -2384,17 +2391,48 @@ Replace the entire contents of `src/app/page.tsx`:
 ```tsx
 import { Suspense } from "react";
 import { LicensePage } from "@/components/licenses/license-page";
+import { LicensePageFallback } from "@/components/licenses/license-page-fallback";
 
 export default function Home() {
   return (
-    // useSearchParams needs a Suspense boundary to avoid opting the whole
-    // route into client-side rendering.
-    <Suspense fallback={null}>
-      <LicensePage />
-    </Suspense>
+    <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 py-10">
+      <header className="flex flex-col gap-1">
+        <h1 className="text-2xl font-semibold tracking-tight">License usage</h1>
+        <p className="text-sm text-muted-foreground">
+          Customer license records across all accounts.
+        </p>
+      </header>
+
+      {/*
+        LicensePage reads the list state from the URL via useSearchParams, which
+        no static prerender can know. On a static route that bails the subtree
+        out to client rendering, and the production build fails outright without
+        a boundary here. The fallback is not a spinner for a network wait: it is
+        the markup baked into the static HTML until hydration replaces it, so an
+        empty one would mean a blank first paint. Keeping the frame and heading
+        above the boundary lets them prerender.
+      */}
+      <Suspense fallback={<LicensePageFallback />}>
+        <LicensePage />
+      </Suspense>
+    </main>
   );
 }
 ```
+
+> **Corrected after the build.** This step originally used `fallback={null}` and left the page
+> frame inside the client root, on the reasoning that the boundary only existed to stop
+> `useSearchParams` opting the route into client rendering. That reasoning was incomplete.
+> Inspecting `.next/server/app/index.html` showed the prerendered body empty apart from scripts
+> and a `BAILOUT_TO_CLIENT_SIDE_RENDERING` marker: no `<main>`, no heading. The fallback *is* the
+> static HTML, so `null` bought a blank first paint, and the loading skeleton inside `LicensePage`
+> could not cover it because it sat below the boundary that bailed out. Fixed by lifting the frame
+> above the boundary and giving the fallback real skeleton markup.
+>
+> Pinning the column widths in `license-table-columns.ts` came out of the same check. Measured
+> across the boundary, headers moved up to 73px sideways on hydration, because auto table layout
+> sized columns from the skeleton cell widths. That jump was already present in the normal
+> loading-to-ready transition; it just had not been measured.
 
 Update the `metadata` export in `src/app/layout.tsx`:
 
@@ -2418,6 +2456,7 @@ Start `bun run dev`, then check each in the browser:
 | State | How to reach it | Expected | Verified |
 | --- | --- | --- | --- |
 | Loading | Hard refresh `/` | Skeleton rows, no layout jump | Yes (loading copy under delayed GET; skeleton present in tree) |
+| Prerender | Load `/` with JavaScript disabled | Frame, heading, and skeleton table present in the static HTML | Yes (added later; header columns measured at 0px shift across hydration at 1280 and 1024) |
 | Ready | Wait for load | 25 rows, sorted by renewal date ascending | Yes |
 | Sort | Click each header twice | Ascending then descending, arrow follows | Yes (Customer column) |
 | Search | Type a partial name | Filters after a pause, not per keystroke | Yes (`Northwind` -> 2 matches) |

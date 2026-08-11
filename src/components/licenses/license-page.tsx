@@ -48,15 +48,12 @@ export function LicensePage() {
     setIsDetailOpen(true);
   }
 
+  // The page frame and heading live in the Server Component above, so they can
+  // be prerendered. Everything from here down depends on the URL, which is only
+  // readable on the client. These are direct children of that frame's flex
+  // column: Suspense and fragments emit no DOM, so the column gap still applies.
   return (
-    <main className="mx-auto flex w-full max-w-6xl flex-col gap-4 px-6 py-10">
-      <header className="flex flex-col gap-1">
-        <h1 className="text-2xl font-semibold tracking-tight">License usage</h1>
-        <p className="text-sm text-muted-foreground">
-          Customer license records across all accounts.
-        </p>
-      </header>
-
+    <>
       {state.status === "error" ? (
         <ErrorState message={state.message} onRetry={refetch} />
       ) : (
@@ -120,6 +117,6 @@ export function LicensePage() {
         onOpenChange={setIsDetailOpen}
         onSaved={handleSaved}
       />
-    </main>
+    </>
   );
 }

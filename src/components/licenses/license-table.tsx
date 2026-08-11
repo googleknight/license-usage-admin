@@ -15,17 +15,10 @@ import {
   isOverProvisioned,
 } from "@/lib/licenses/format";
 import type { License, SortDirection, SortField } from "@/lib/licenses/types";
+import { LICENSE_TABLE_COLUMNS } from "./license-table-columns";
 import { LicenseTableSkeleton } from "./license-table-skeleton";
 import { PlanBadge } from "./plan-badge";
 import { StatusBadge } from "./status-badge";
-
-const COLUMNS: { field: SortField; label: string; numeric?: boolean }[] = [
-  { field: "customerName", label: "Customer" },
-  { field: "plan", label: "Plan" },
-  { field: "status", label: "Status" },
-  { field: "utilization", label: "Seats used / allowed", numeric: true },
-  { field: "renewalDate", label: "Renewal date" },
-];
 
 export function LicenseTable({
   rows,
@@ -47,12 +40,12 @@ export function LicenseTable({
       <Table>
         <TableHeader>
           <TableRow>
-            {COLUMNS.map((column) => {
+            {LICENSE_TABLE_COLUMNS.map((column) => {
               const active = sortField === column.field;
               return (
                 <TableHead
                   key={column.field}
-                  className={cn(column.numeric && "text-right")}
+                  className={cn(column.width, column.numeric && "text-right")}
                   // aria-sort belongs on the header cell itself, not on the
                   // button inside it. Screen readers read it off the th.
                   aria-sort={
