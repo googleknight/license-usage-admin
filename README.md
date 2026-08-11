@@ -9,7 +9,7 @@ Built with Next.js 16 (App Router), TypeScript, Tailwind CSS 4, and shadcn/ui.
 
 ## Running it
 
-Requires [Bun](https://bun.sh) 1.3 or later and Node 20+.
+Requires [Bun](https://bun.sh) 1.3 or later and Node 20.9 or later, the floor Next.js 16 sets.
 
 ```bash
 bun install
@@ -36,11 +36,14 @@ on demand:
 | --- | --- |
 | Loading | Reload the page. The list route delays 400 ms deliberately. |
 | Fetch error | Open [`/?fail=1`](http://localhost:3000/?fail=1). The list route returns a 500. |
+| Empty, no data | Open [`/?empty=1`](http://localhost:3000/?empty=1). The list route returns no records. |
 | Empty, no matches | Search for a string no customer matches. |
 | Validation errors | In the drawer, enter `-1`, `12.5`, `abc`, or any value below the seats already in use. |
+| Save failure | Open [`/?failSave=1`](http://localhost:3000/?failSave=1), then save a seat change. The list still loads. |
 
-`GET /api/licenses?fail=1` and `PATCH /api/licenses/:id?fail=1` both return a 500 directly, if
-you would rather hit the API than the UI.
+Each flag is forwarded from the page URL to the mock API, so `GET /api/licenses?fail=1`,
+`GET /api/licenses?empty=1`, and `PATCH /api/licenses/:id?fail=1` produce the same responses
+directly, if you would rather hit the API than the UI.
 
 ---
 
@@ -140,6 +143,17 @@ With another hour or two:
 5. **Optimistic updates with rollback**, once the pessimistic path is proven.
 
 Deliberately out of scope, with reasoning, in [`requirements/scope.md`](requirements/scope.md).
+
+---
+
+## Time spent
+
+About two hours in total, inside the 2 to 3 hour budget.
+
+Roughly half an hour of that went to scoping and writing the implementation plan before any code
+was written, and the rest to the build itself. Front-loading the plan is what kept the layering
+consistent and made the pure logic straightforward to test, so it is counted as work rather than
+overhead.
 
 ---
 

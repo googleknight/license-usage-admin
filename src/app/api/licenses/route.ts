@@ -19,5 +19,11 @@ export async function GET(request: Request): Promise<Response> {
 
   await sleep(SIMULATED_LATENCY_MS);
 
+  // "No licenses at all" and "nothing matched your filters" are different
+  // states, and the second is the only one a seeded dataset can reach.
+  if (searchParams.get("empty") === "1") {
+    return Response.json({ licenses: [] });
+  }
+
   return Response.json({ licenses: getAllLicenses() });
 }

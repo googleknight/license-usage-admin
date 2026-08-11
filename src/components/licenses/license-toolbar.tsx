@@ -14,6 +14,7 @@ import {
 export function LicenseToolbar({
   query,
   hasActiveFilters,
+  searchResetKey,
   onSearchChange,
   onToggleStatus,
   onTogglePlan,
@@ -21,6 +22,8 @@ export function LicenseToolbar({
 }: {
   query: LicenseQuery;
   hasActiveFilters: boolean;
+  /** Bumped when filters are cleared, which remounts the search box. */
+  searchResetKey: number;
   onSearchChange: (value: string) => void;
   onToggleStatus: (status: LicenseStatus) => void;
   onTogglePlan: (plan: LicensePlan) => void;
@@ -28,7 +31,11 @@ export function LicenseToolbar({
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <LicenseSearchInput value={query.search} onChange={onSearchChange} />
+      <LicenseSearchInput
+        key={searchResetKey}
+        value={query.search}
+        onChange={onSearchChange}
+      />
       <LicenseFacetFilter
         label="Status"
         options={LICENSE_STATUSES}

@@ -7,7 +7,12 @@ import {
   type LicenseStatus,
 } from "../src/lib/licenses/types";
 
-/** Deterministic PRNG (mulberry32) so regenerating without changing the seed is a no-op. */
+/**
+ * Deterministic PRNG (mulberry32): names, plans, and seat counts are identical
+ * on every run for a given seed. Dates are not, since they are anchored to the
+ * day the script runs (see TODAY), which is what keeps status and renewal date
+ * agreeing after a regeneration.
+ */
 function mulberry32(seed: number): () => number {
   let a = seed;
   return () => {

@@ -1,6 +1,7 @@
+import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ children }: { children: ReactNode }) {
   return (
     <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed px-6 py-16 text-center">
       {children}

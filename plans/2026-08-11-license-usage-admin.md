@@ -151,7 +151,7 @@ Tests are colocated as `*.test.ts` beside the module under test, which is what `
 - Consumes: nothing
 - Produces: `License`, `LicensePlan`, `LicenseStatus`, `LICENSE_PLANS`, `LICENSE_STATUSES`, `SortField`, `SortDirection`, `LicenseQuery`, `LicenseQueryResult`, `utilization()`, `LICENSE_FIXTURES`
 
-- [ ] **Step 1: Write the types**
+- [x] **Step 1: Write the types**
 
 Create `src/lib/licenses/types.ts`:
 
@@ -226,7 +226,7 @@ export function utilization(license: License): number {
 }
 ```
 
-- [ ] **Step 2: Write the fixture generator**
+- [x] **Step 2: Write the fixture generator**
 
 Create `scripts/generate-fixtures.ts`. It uses a seeded PRNG so output is byte-identical between runs, which keeps the committed fixture file free of pointless diffs:
 
@@ -377,7 +377,7 @@ writeFileSync("src/lib/licenses/fixtures.ts", `${banner}\n${body}`);
 console.log("Wrote 50 fixtures to src/lib/licenses/fixtures.ts");
 ```
 
-- [ ] **Step 3: Add the script and generate**
+- [x] **Step 3: Add the script and generate**
 
 Add to `package.json` scripts:
 
@@ -388,7 +388,7 @@ Add to `package.json` scripts:
 Run: `bun run generate:fixtures`
 Expected: `Wrote 50 fixtures to src/lib/licenses/fixtures.ts`
 
-- [ ] **Step 4: Verify the generated data holds its invariants**
+- [x] **Step 4: Verify the generated data holds its invariants**
 
 Run: `bun --eval 'const {LICENSE_FIXTURES:f}=await import("./src/lib/licenses/fixtures.ts"); console.log("count",f.length); console.log("statuses",[...new Set(f.map(l=>l.status))]); console.log("plans",[...new Set(f.map(l=>l.plan))]); console.log("over-provisioned",f.filter(l=>l.seatsUsed>l.seatsAllowed).length); console.log("unique names",new Set(f.map(l=>l.customerName)).size);'`
 
@@ -396,7 +396,7 @@ Note: `bun --eval`, not `bun run --eval`. The latter expects a file or a package
 
 Expected: count 50, all four statuses present, all three plans present, over-provisioned count above 0, unique names 50.
 
-- [ ] **Step 5: Typecheck and commit**
+- [x] **Step 5: Typecheck and commit**
 
 Run: `bunx tsc --noEmit`
 Expected: no errors.
@@ -418,7 +418,7 @@ git commit -m "feat: add license domain types and generated fixtures"
 - Consumes: `License`, `LicenseQuery`, `LicenseQueryResult`, `utilization`, `LICENSE_PLANS`, `LICENSE_STATUSES` from `./types`
 - Produces: `queryLicenses(all: License[], query: LicenseQuery): LicenseQueryResult`, `DEFAULT_QUERY`, `PAGE_SIZES`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `src/lib/licenses/query.test.ts`:
 
@@ -603,12 +603,12 @@ describe("pagination", () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `bun test src/lib/licenses/query.test.ts`
 Expected: FAIL, cannot resolve `./query`.
 
-- [ ] **Step 3: Implement the query module**
+- [x] **Step 3: Implement the query module**
 
 Create `src/lib/licenses/query.ts`:
 
@@ -691,12 +691,12 @@ export function queryLicenses(all: License[], query: LicenseQuery): LicenseQuery
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `bun test src/lib/licenses/query.test.ts`
 Expected: PASS, all tests green.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/licenses/query.ts src/lib/licenses/query.test.ts
@@ -715,7 +715,7 @@ git commit -m "feat: add pure filter, sort, and paginate logic with tests"
 - Consumes: nothing
 - Produces: `validateSeatsAllowed(raw: string, seatsUsed: number): SeatsValidation`, `MAX_SEATS_ALLOWED`, type `SeatsValidation`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 Create `src/lib/licenses/validation.test.ts`:
 
@@ -793,12 +793,12 @@ describe("validateSeatsAllowed", () => {
 });
 ```
 
-- [ ] **Step 2: Run the tests to verify they fail**
+- [x] **Step 2: Run the tests to verify they fail**
 
 Run: `bun test src/lib/licenses/validation.test.ts`
 Expected: FAIL, cannot resolve `./validation`.
 
-- [ ] **Step 3: Implement the validator**
+- [x] **Step 3: Implement the validator**
 
 Create `src/lib/licenses/validation.ts`:
 
@@ -855,12 +855,12 @@ export function validateSeatsAllowed(raw: string, seatsUsed: number): SeatsValid
 }
 ```
 
-- [ ] **Step 4: Run the tests to verify they pass**
+- [x] **Step 4: Run the tests to verify they pass**
 
 Run: `bun test src/lib/licenses/validation.test.ts`
 Expected: PASS, all tests green.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/lib/licenses/validation.ts src/lib/licenses/validation.test.ts
@@ -882,7 +882,7 @@ git commit -m "feat: add seats allowed validation with tests"
   - `GET /api/licenses` returns `200 { licenses: License[] }`, or `500 { error: string }` when `?fail=1`
   - `PATCH /api/licenses/:id` accepts `{ seatsAllowed: number }`, returns `200 { license: License }`, `400 { error }`, `404 { error }`, or `500 { error }` when `?fail=1`
 
-- [ ] **Step 1: Read the Next.js 16 route handler docs before writing any handler**
+- [x] **Step 1: Read the Next.js 16 route handler docs before writing any handler**
 
 Run: `ls node_modules/next/dist/docs/01-app/03-api-reference/02-file-conventions/`
 
@@ -893,7 +893,7 @@ Then read `route.mdx` from that directory. Confirm two things specifically, beca
 
 Write the handlers to match what the bundled docs say, not what older App Router examples look like.
 
-- [ ] **Step 2: Write the store**
+- [x] **Step 2: Write the store**
 
 Create `src/lib/licenses/store.ts`:
 
@@ -935,7 +935,7 @@ export function resetStore(): void {
 }
 ```
 
-- [ ] **Step 3: Write the list route handler**
+- [x] **Step 3: Write the list route handler**
 
 Create `src/app/api/licenses/route.ts`. Adjust the signature if Step 1's reading says otherwise:
 
@@ -965,7 +965,7 @@ export async function GET(request: Request): Promise<Response> {
 }
 ```
 
-- [ ] **Step 4: Write the update route handler**
+- [x] **Step 4: Write the update route handler**
 
 Create `src/app/api/licenses/[id]/route.ts`:
 
@@ -1030,7 +1030,7 @@ export async function PATCH(
 }
 ```
 
-- [ ] **Step 5: Verify both routes against the running dev server**
+- [x] **Step 5: Verify both routes against the running dev server**
 
 Run `bun run dev` in one shell, then in another:
 
@@ -1044,7 +1044,7 @@ curl -s -o /dev/null -w '%{http_code}\n' -X PATCH localhost:3000/api/licenses/no
 
 Expected, in order: a JSON payload of licenses; `500`; the updated license with `seatsAllowed: 999`; a 400 with the "cannot be negative" message; `404`.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/lib/licenses/store.ts src/app/api/licenses
@@ -1065,7 +1065,7 @@ git commit -m "feat: serve mock licenses from route handlers with forced-failure
   - `useDebouncedValue<T>(value: T, delayMs: number): T`
   - `useLicenseListParams(): { query: LicenseQuery; setSearch(v: string): void; toggleStatus(s: LicenseStatus): void; togglePlan(p: LicensePlan): void; setSort(field: SortField): void; setPage(page: number): void; setPageSize(size: number): void; clearFilters(): void; hasActiveFilters: boolean }`
 
-- [ ] **Step 1: Write the debounce hook**
+- [x] **Step 1: Write the debounce hook**
 
 Create `src/hooks/use-debounced-value.ts`:
 
@@ -1090,7 +1090,7 @@ export function useDebouncedValue<T>(value: T, delayMs: number): T {
 }
 ```
 
-- [ ] **Step 2: Write the URL params hook**
+- [x] **Step 2: Write the URL params hook**
 
 Create `src/hooks/use-license-list-params.ts`:
 
@@ -1231,12 +1231,12 @@ export function useLicenseListParams() {
 }
 ```
 
-- [ ] **Step 3: Typecheck**
+- [x] **Step 3: Typecheck**
 
 Run: `bunx tsc --noEmit`
 Expected: no errors.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add src/hooks/use-debounced-value.ts src/hooks/use-license-list-params.ts
@@ -1255,9 +1255,10 @@ git commit -m "feat: hold list state in URL search params"
 - Produces:
   - `type LicensesState = { status: "loading" } | { status: "error"; message: string } | { status: "ready"; licenses: License[] }`
   - `useLicenses(): { state: LicensesState; refetch(): void; applyUpdate(license: License): void }`
-  - `saveSeatsAllowed(id: string, seatsAllowed: number, options?: { forceFailure?: boolean }): Promise<License>`
+  - `saveSeatsAllowed(id: string, seatsAllowed: number): Promise<License>` (see Post-build revisions: the
+    planned `options.forceFailure` argument was replaced by a `?failSave=1` page flag)
 
-- [ ] **Step 1: Write the hook and the save function**
+- [x] **Step 1: Write the hook and the save function**
 
 Create `src/hooks/use-licenses.ts`:
 
@@ -1354,9 +1355,8 @@ export function useLicenses() {
 export async function saveSeatsAllowed(
   id: string,
   seatsAllowed: number,
-  options: { forceFailure?: boolean } = {},
 ): Promise<License> {
-  const suffix = options.forceFailure ? "?fail=1" : "";
+  const suffix = pageFlag("failSave") ? "?fail=1" : "";
   const response = await fetch(`/api/licenses/${id}${suffix}`, {
     method: "PATCH",
     headers: { "content-type": "application/json" },
@@ -1372,12 +1372,12 @@ export async function saveSeatsAllowed(
 }
 ```
 
-- [ ] **Step 2: Typecheck**
+- [x] **Step 2: Typecheck**
 
 Run: `bunx tsc --noEmit`
 Expected: no errors.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/hooks/use-licenses.ts
@@ -1398,7 +1398,7 @@ git commit -m "feat: add license fetching hook with loading and error states"
 - Consumes: `LicenseStatus`, `LicensePlan`, `License`, `utilization` from Task 1
 - Produces: `formatDate(iso: string): string`, `formatUtilization(license: License): string`, `isOverProvisioned(license: License): boolean`, `<StatusBadge status />`, `<PlanBadge plan />`
 
-- [ ] **Step 1: Initialise shadcn/ui and add the primitives**
+- [x] **Step 1: Initialise shadcn/ui and add the primitives**
 
 Run:
 
@@ -1411,7 +1411,7 @@ Expected: `components.json` created, primitives written under `src/components/ui
 
 If a prompt appears, accept the defaults. The project already uses Tailwind 4 and the `@/*` alias, which is what the initialiser expects.
 
-- [ ] **Step 2: Write the formatting helpers**
+- [x] **Step 2: Write the formatting helpers**
 
 Create `src/lib/licenses/format.ts`:
 
@@ -1448,7 +1448,7 @@ export function isOverProvisioned(license: License): boolean {
 }
 ```
 
-- [ ] **Step 3: Write the badges**
+- [x] **Step 3: Write the badges**
 
 Create `src/components/licenses/status-badge.tsx`:
 
@@ -1503,12 +1503,12 @@ export function PlanBadge({ plan }: { plan: LicensePlan }) {
 }
 ```
 
-- [ ] **Step 4: Verify the build still passes**
+- [x] **Step 4: Verify the build still passes**
 
 Run: `bun run build`
 Expected: compiles successfully.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add components.json src/components/ui src/lib/utils.ts src/lib/licenses/format.ts src/components/licenses
@@ -1532,7 +1532,7 @@ git commit -m "feat: add shadcn primitives, date formatting, and status badges"
 > take function props and render Base UI's client-only `Button`, so a server component importing
 > them directly would fail. Add the directive if that ever changes.
 
-- [ ] **Step 1: Write the state components**
+- [x] **Step 1: Write the state components**
 
 Create `src/components/licenses/states.tsx`:
 
@@ -1587,7 +1587,7 @@ export function NoResultsState({ onClearFilters }: { onClearFilters: () => void 
 }
 ```
 
-- [ ] **Step 2: Write the skeleton**
+- [x] **Step 2: Write the skeleton**
 
 Create `src/components/licenses/license-table-skeleton.tsx`:
 
@@ -1616,7 +1616,7 @@ export function LicenseTableSkeleton({ rows = 8 }: { rows?: number }) {
 }
 ```
 
-- [ ] **Step 3: Typecheck and commit**
+- [x] **Step 3: Typecheck and commit**
 
 Run: `bunx tsc --noEmit`
 Expected: no errors.
@@ -1639,7 +1639,7 @@ git commit -m "feat: add loading skeleton and empty, error, and no-results state
 - Consumes: `useDebouncedValue` from Task 5, shadcn `Input`, `Button`, `Popover`, `Checkbox`, `Label`, `Badge`
 - Produces: `<LicenseToolbar query onSearchChange onToggleStatus onTogglePlan onClearFilters hasActiveFilters />`
 
-- [ ] **Step 1: Write the debounced search input**
+- [x] **Step 1: Write the debounced search input**
 
 Create `src/components/licenses/license-search-input.tsx`:
 
@@ -1693,7 +1693,7 @@ export function LicenseSearchInput({
 }
 ```
 
-- [ ] **Step 2: Write the reusable facet filter**
+- [x] **Step 2: Write the reusable facet filter**
 
 Create `src/components/licenses/license-facet-filter.tsx`:
 
@@ -1756,7 +1756,7 @@ export function LicenseFacetFilter<T extends string>({
 }
 ```
 
-- [ ] **Step 3: Write the toolbar**
+- [x] **Step 3: Write the toolbar**
 
 Create `src/components/licenses/license-toolbar.tsx`:
 
@@ -1814,7 +1814,7 @@ export function LicenseToolbar({
 }
 ```
 
-- [ ] **Step 4: Typecheck and commit**
+- [x] **Step 4: Typecheck and commit**
 
 Run: `bunx tsc --noEmit`
 Expected: no errors.
@@ -1849,7 +1849,7 @@ git commit -m "feat: add debounced search and multi-select facet filters"
 > grid semantics and the affordance. That is a layout change, out of scope here, and recorded in
 > the README as a next step.
 
-- [ ] **Step 1: Write the table**
+- [x] **Step 1: Write the table**
 
 Create `src/components/licenses/license-table.tsx`:
 
@@ -1963,7 +1963,7 @@ export function LicenseTable({
 }
 ```
 
-- [ ] **Step 2: Write pagination**
+- [x] **Step 2: Write pagination**
 
 Create `src/components/licenses/license-pagination.tsx`:
 
@@ -2036,7 +2036,7 @@ export function LicensePagination({
 }
 ```
 
-- [ ] **Step 3: Typecheck and commit**
+- [x] **Step 3: Typecheck and commit**
 
 Run: `bunx tsc --noEmit`
 Expected: no errors.
@@ -2058,7 +2058,7 @@ git commit -m "feat: add sortable table and pagination controls"
 - Consumes: `validateSeatsAllowed` from Task 3, `saveSeatsAllowed` from Task 6, `formatDate` from Task 7, shadcn `Sheet`, `Input`, `Button`, `Label`
 - Produces: `<SeatsEditForm license onSaved />`, `<LicenseDetailDrawer license open onOpenChange onSaved />`
 
-- [ ] **Step 1: Write the seats form**
+- [x] **Step 1: Write the seats form**
 
 Create `src/components/licenses/seats-edit-form.tsx`:
 
@@ -2152,7 +2152,7 @@ export function SeatsEditForm({
 }
 ```
 
-- [ ] **Step 2: Write the drawer**
+- [x] **Step 2: Write the drawer**
 
 Create `src/components/licenses/license-detail-drawer.tsx`:
 
@@ -2246,7 +2246,7 @@ export function LicenseDetailDrawer({
 }
 ```
 
-- [ ] **Step 3: Typecheck and commit**
+- [x] **Step 3: Typecheck and commit**
 
 Run: `bunx tsc --noEmit`
 Expected: no errors.
@@ -2269,7 +2269,7 @@ git commit -m "feat: add detail drawer with validated seats edit form"
 - Consumes: every component and hook from Tasks 5 to 11
 - Produces: the finished screen
 
-- [ ] **Step 1: Write the client root**
+- [x] **Step 1: Write the client root**
 
 Create `src/components/licenses/license-page.tsx`:
 
@@ -2377,7 +2377,7 @@ export function LicensePage() {
 }
 ```
 
-- [ ] **Step 2: Replace the page**
+- [x] **Step 2: Replace the page**
 
 Replace the entire contents of `src/app/page.tsx`:
 
@@ -2405,35 +2405,40 @@ export const metadata: Metadata = {
 };
 ```
 
-- [ ] **Step 3: Delete leftover scaffold assets**
+- [x] **Step 3: Delete leftover scaffold assets**
 
 Run: `rm -f public/next.svg public/vercel.svg public/file.svg public/globe.svg public/window.svg`
 
 Then run `bun run build` and confirm nothing referenced them.
 
-- [ ] **Step 4: Walk every state manually**
+- [x] **Step 4: Walk every state manually**
 
 Start `bun run dev`, then check each in the browser:
 
-| State | How to reach it | Expected |
-| --- | --- | --- |
-| Loading | Hard refresh `/` | Skeleton rows, no layout jump |
-| Ready | Wait for load | 25 rows, sorted by renewal date ascending |
-| Sort | Click each header twice | Ascending then descending, arrow follows |
-| Search | Type a partial name | Filters after a pause, not per keystroke |
-| Filters | Select two statuses and one plan | OR within a facet, AND across facets |
-| No results | Search `zzzzz` | No-results state with a working Clear filters button |
-| Pagination | Change page size, page forward | Counts update, buttons disable at each end |
-| URL state | Copy the URL to a new tab | Same search, filters, sort, and page |
-| Back button | Filter, then go back | Previous view restored |
-| Detail | Click a row, and separately Tab to a row and press Enter | Drawer opens both ways |
-| Focus trap | Tab inside the drawer, press Escape | Focus stays inside, Escape closes |
-| Validation | Enter `-1`, `12.5`, `abc`, and a value below seats used | Inline error, Save disabled |
-| Save | Enter a valid value, click Save | Button shows Saving, row updates on close |
-| Save failure | Temporarily add `?fail=1` to the PATCH URL in `saveSeatsAllowed` | Inline error, input preserved |
-| Fetch error | Load `/?fail=1` | Error state with a working Try again |
+| State | How to reach it | Expected | Verified |
+| --- | --- | --- | --- |
+| Loading | Hard refresh `/` | Skeleton rows, no layout jump | Yes (loading copy under delayed GET; skeleton present in tree) |
+| Ready | Wait for load | 25 rows, sorted by renewal date ascending | Yes |
+| Sort | Click each header twice | Ascending then descending, arrow follows | Yes (Customer column) |
+| Search | Type a partial name | Filters after a pause, not per keystroke | Yes (`Northwind` -> 2 matches) |
+| Filters | Select two statuses and one plan | OR within a facet, AND across facets | Yes (Active+Expired AND Trial -> 6) |
+| No results | Search `zzzzz` | No-results state with a working Clear filters button | Yes |
+| Pagination | Change page size, page forward | Counts update, buttons disable at each end | Yes |
+| URL state | Copy the URL to a new tab | Same search, filters, sort, and page | Yes (deep link restore) |
+| Back button | Filter, then go back | Previous view restored | Yes |
+| Detail | Click a row, and separately Tab to a row and press Enter | Drawer opens both ways | Yes (click and Enter) |
+| Focus trap | Tab inside the drawer, press Escape | Focus stays inside, Escape closes | Yes (Escape; trap is Sheet/Dialog default) |
+| Validation | Enter `-1`, `12.5`, `abc`, and a value below seats used | Inline error, Save disabled | Yes |
+| Save | Enter a valid value, click Save | Button shows Saving, row updates on close | Yes |
+| Save failure | Temporarily add `?fail=1` to the PATCH URL in `saveSeatsAllowed` | Inline error, input preserved | Yes (route interception equivalent) |
+| Fetch error | Load `/?fail=1` | Error state with a working Try again | Yes |
 
-- [ ] **Step 5: Full verification gate**
+Walked 2026-08-11 via headless Chromium against `bun run dev`, then re-run against the
+post-fix tree (search remount, drawer open/selection split, deferred validation, `?empty=1`).
+31/31 checks passed on the re-run. Empty dataset is now reached through `/?empty=1` rather than
+a test-only route mock.
+
+- [x] **Step 5: Full verification gate**
 
 Run each and confirm it passes:
 
@@ -2445,7 +2450,7 @@ bun run build
 
 Expected: tests green, lint clean, build succeeds.
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add src/app src/components/licenses/license-page.tsx public
@@ -2459,7 +2464,7 @@ git commit -m "feat: compose license usage page with all states wired up"
 **Files:**
 - Modify: `README.md` (replace the scaffold contents entirely)
 
-- [ ] **Step 1: Write the README**
+- [x] **Step 1: Write the README**
 
 It must cover, at minimum:
 
@@ -2491,6 +2496,22 @@ git push
 **Type consistency.** `License`, `LicenseQuery`, `LicenseQueryResult`, `SortField`, and `SortDirection` are defined once in Task 1 and imported everywhere after. `queryLicenses`, `validateSeatsAllowed`, `saveSeatsAllowed`, `useLicenses`, and `useLicenseListParams` keep the same signatures across every task that references them. `utilization` lives in `types.ts` and is consumed by both `query.ts` and `format.ts`.
 
 **Known risk.** Task 4 writes route handlers whose exact signature depends on the installed Next.js version, which is why Step 1 of that task reads the bundled docs before any code is written rather than trusting the shape shown here.
+
+---
+
+## Post-build revisions
+
+A review pass after the build found defects the plan did not anticipate. What changed, and why:
+
+- **Search input reset (Task 9).** The planned debounce reported upward through an effect keyed on both the debounced value and the `onChange` prop. Since the parent recreates that callback on every render, a pending debounce could be replayed over a search the URL had already cleared. The callback now lives in a ref, and clearing filters remounts the input, because a draft that has not committed yet is invisible from outside the component.
+- **Seats form validation (Task 11).** Validating the untouched draft flagged every over-provisioned account (assumption A3) the moment its drawer opened. Errors now appear only once the field has been edited. The submit guard and disabled button are unchanged, so nothing invalid can be saved.
+- **Drawer open state (Task 11).** Deriving `open` from the selected id emptied the panel during the sheet's exit transition. Open state is now tracked separately from the selection.
+- **Aborted fetches (Task 6).** Aborting rejects the fetch, but a response that had already settled could still overwrite a newer attempt. Both `setState` calls now check the signal first.
+- **PATCH payload (Task 4).** The handler coerced the body with `String()`, which accepted `[25]` as `25`. It now requires a number or a string before validating.
+- **Demo flags (Tasks 4 and 6).** The planned `forceFailure` argument on `saveSeatsAllowed` was never passed by any caller, leaving the inline save-failure state unreachable, and the "no data at all" empty state had no trigger at all. Both are now page URL flags (`?failSave=1`, `?empty=1`) alongside the existing `?fail=1`, and are documented in the README.
+- **Facet params (Task 5).** Repeated values in a hand-written URL counted twice in the filter badge. Parsing now deduplicates.
+
+Two review findings were deliberately not acted on. The list setters still rebuild the URL from a `query` snapshot, which is stale for the duration of one client navigation; rewriting them to mutate `URLSearchParams` key by key costs more readability than a race no user-paced interaction can reach. `queryLicenses` still assumes a positive `pageSize`, which the URL parser guarantees by only accepting `PAGE_SIZES` members.
 
 ---
 

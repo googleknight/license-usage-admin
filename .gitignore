@@ -47,3 +47,6 @@ next-env.d.ts
 # Local working notes and editor tooling
 CLAUDE.local.md
 /.serena
+
+# One-off Playwright checklist runner (not part of the product)
+/scripts/checklist-runner/

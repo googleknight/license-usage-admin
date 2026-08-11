@@ -18,13 +18,13 @@ find, inspect, and lightly manage them.
 
 Five columns, all sortable:
 
-| Column | Notes |
-| --- | --- |
-| Customer name | Alphabetical sort |
-| Plan | `Trial` / `Standard` / `Enterprise` |
-| Status | `Active` / `Expiring Soon` / `Expired` / `Suspended`, rendered as a coloured badge |
-| Seats used / allowed | Displayed as `12 / 25`, **sorted by utilisation** (see assumption A2) |
-| Renewal date | Sorted chronologically |
+| Column               | Notes                                                                              |
+| -------------------- | ---------------------------------------------------------------------------------- |
+| Customer name        | Alphabetical sort                                                                  |
+| Plan                 | `Trial` / `Standard` / `Enterprise`                                                |
+| Status               | `Active` / `Expiring Soon` / `Expired` / `Suspended`, rendered as a coloured badge |
+| Seats used / allowed | Displayed as `12 / 25`, **sorted by utilisation** (see assumption A2)              |
+| Renewal date         | Sorted chronologically                                                             |
 
 ### Interactions
 
@@ -47,12 +47,12 @@ mock API, and updates the row in place on success. Validation rules are in assum
 
 Not just the happy path:
 
-- **Loading** — skeleton rows matching the table layout
-- **Error** — fetch failure surfaces a retry affordance, and is triggerable on demand (A6)
-- **Empty, no data** — the dataset itself is empty
-- **Empty, no matches** — filters or search excluded everything, offered with a clear-filters action
-- **Validation errors** — inline on the seats form, with save disabled while invalid
-- **Save failure** — surfaced inline without losing the user's input
+- **Loading**: skeleton rows matching the table layout
+- **Error**: fetch failure surfaces a retry affordance, and is triggerable on demand (A6)
+- **Empty, no data**: the dataset itself is empty
+- **Empty, no matches**: filters or search excluded everything, offered with a clear-filters action
+- **Validation errors**: inline on the seats form, with save disabled while invalid
+- **Save failure**: surfaced inline without losing the user's input
 
 ---
 
@@ -104,14 +104,14 @@ makes sense if that state is reachable, so the data reflects it, and the table f
 The stated rules were "not negative" and "not below seats used". Extended to a complete set,
 since a form needs to reject every bad input, not just two:
 
-| Rule | Rejected example |
-| --- | --- |
-| Required | `""` |
-| Numeric | `"abc"`, `"1e3"` |
-| Integer | `"12.5"` |
-| Not negative | `"-1"` |
-| Not below seats used | `"5"` when 12 seats are in use |
-| Sane upper bound (100,000) | `"999999999"` |
+| Rule                       | Rejected example               |
+| -------------------------- | ------------------------------ |
+| Required                   | `""`                           |
+| Numeric                    | `"abc"`, `"1e3"`               |
+| Integer                    | `"12.5"`                       |
+| Not negative               | `"-1"`                         |
+| Not below seats used       | `"5"` when 12 seats are in use |
+| Sane upper bound (100,000) | `"999999999"`                  |
 
 Errors surface inline, and save stays disabled while the value is invalid.
 
@@ -196,11 +196,34 @@ Worth doing, and named here so their absence reads as a choice:
 
 ## 4. Definition of done
 
-- [ ] Table renders all columns, with status as a distinct badge
-- [ ] Search, filter, sort, and pagination all work and survive a refresh
-- [ ] Row click opens the drawer with the three extra fields
-- [ ] Seats allowed can be edited, validated, saved, and the row updates
-- [ ] Loading, error, both empty states, and validation errors all reachable
-- [ ] `bun test` passes
-- [ ] `bun run build` and `bun run lint` both clean
-- [ ] README explains setup, priorities, tradeoffs, and honest time spent
+Re-verified 2026-08-11 against the post-fix tree with a headless browser walkthrough
+(31/31 checks). Includes the search-clear remount, drawer open/selection split, deferred
+validation until edit, and `?empty=1` empty-dataset path.
+
+- [x] `bun test` passes
+- [x] `bun run build` and `bun run lint` both clean
+- [x] README explains setup, priorities, tradeoffs, and honest time spent
+- [x] The page and both API routes respond, including the forced 500 on `?fail=1`
+- [x] Table renders all columns, with status as a distinct badge
+- [x] Search, filter, sort, and pagination all work and survive a refresh
+- [x] Row click opens the drawer with the three extra fields
+- [x] Seats allowed can be edited, validated, saved, and the row updates
+- [x] Loading, error, both empty states, and validation errors all reachable
+
+Browser checks that backed the interactive items above:
+
+| Check | Result |
+| --- | --- |
+| Default view | 25 rows, renewal date ascending, status and plan badges present |
+| Search | `Northwind` wrote `?q=` and filtered to 2 of 50 |
+| Clear uncommitted draft | Mid-typing draft cleared by toolbar Clear via search remount |
+| Filters | Active + Expired AND Trial produced 6 Trial rows only |
+| Sort | Customer header toggled ascending then descending |
+| Pagination | Page size 10, Next/Previous, `?size=` / `?page=` in the URL |
+| URL / back | Deep link restored search and sort; back cleared a later search |
+| Drawer | Click and Enter both open it; account owner, created, notes present; Escape closes without emptying the panel mid-exit |
+| Validation | Untouched field shows no alert; `-1`, `12.5`, `abc`, and below seats-used each error with Save disabled |
+| Save | Valid PATCH updates the drawer and the table row; intercepted 500 keeps the draft |
+| Loading | "Loading licenses..." visible under a delayed GET |
+| Fetch error | `/?fail=1` shows the error state with Try again |
+| Empty states | No-matches offers Clear filters; `/?empty=1` shows "No licenses yet" without it |

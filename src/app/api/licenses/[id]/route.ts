@@ -37,8 +37,17 @@ export async function PATCH(
       ? (body as { seatsAllowed: unknown }).seatsAllowed
       : undefined;
 
+  // Only a number or a numeric string is a plausible payload. Coercing whatever
+  // arrives would widen the contract silently, since String([25]) is "25".
+  if (typeof seatsAllowed !== "number" && typeof seatsAllowed !== "string") {
+    return Response.json(
+      { error: "seatsAllowed must be a number." },
+      { status: 400 },
+    );
+  }
+
   // Validate on the server too. The client cannot be the only gate.
-  const validation = validateSeatsAllowed(String(seatsAllowed ?? ""), existing.seatsUsed);
+  const validation = validateSeatsAllowed(String(seatsAllowed), existing.seatsUsed);
   if (!validation.ok) {
     return Response.json({ error: validation.error }, { status: 400 });
   }

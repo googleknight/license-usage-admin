@@ -22,6 +22,14 @@ async function readError(response: Response): Promise<string> {
   return `Request failed with status ${response.status}.`;
 }
 
+/**
+ * Reads a demo flag off the page URL. The mock API always succeeding would
+ * leave the failure and empty paths unreachable from the UI (assumption A6).
+ */
+function pageFlag(name: string): boolean {
+  return new URLSearchParams(window.location.search).get(name) === "1";
+}
+
 export function useLicenses() {
   const [state, setState] = useState<LicensesState>({ status: "loading" });
   // Bumping this re-runs the effect, which is how retry works.
@@ -32,19 +40,28 @@ export function useLicenses() {
 
     async function load() {
       try {
-        // Forward ?fail=1 from the page URL so the error state is reachable (assumption A6).
-        const pageParams = new URLSearchParams(window.location.search);
-        const suffix = pageParams.get("fail") === "1" ? "?fail=1" : "";
+        const forwarded = new URLSearchParams();
+        for (const flag of ["fail", "empty"]) {
+          if (pageFlag(flag)) forwarded.set(flag, "1");
+        }
+        const forwardedQuery = forwarded.toString();
+        const suffix = forwardedQuery ? `?${forwardedQuery}` : "";
 
         const response = await fetch(`/api/licenses${suffix}`, {
           signal: controller.signal,
         });
+
+        // Aborting rejects the fetch itself, but a response that had already
+        // settled would otherwise land after a newer attempt started.
         if (!response.ok) {
-          setState({ status: "error", message: await readError(response) });
+          const message = await readError(response);
+          if (controller.signal.aborted) return;
+          setState({ status: "error", message });
           return;
         }
 
         const body = (await response.json()) as { licenses: License[] };
+        if (controller.signal.aborted) return;
         setState({ status: "ready", licenses: body.licenses });
       } catch (error) {
         if (controller.signal.aborted) return;
@@ -96,9 +113,10 @@ export function useLicenses() {
 export async function saveSeatsAllowed(
   id: string,
   seatsAllowed: number,
-  options: { forceFailure?: boolean } = {},
 ): Promise<License> {
-  const suffix = options.forceFailure ? "?fail=1" : "";
+  // ?failSave=1 on the page makes the inline save-failure path reachable
+  // without the list request failing too.
+  const suffix = pageFlag("failSave") ? "?fail=1" : "";
   const response = await fetch(`/api/licenses/${id}${suffix}`, {
     method: "PATCH",
     headers: { "content-type": "application/json" },

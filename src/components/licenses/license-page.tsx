@@ -17,6 +17,8 @@ export function LicensePage() {
   const { state, refetch, applyUpdate } = useLicenses();
   const params = useLicenseListParams();
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [searchResetKey, setSearchResetKey] = useState(0);
 
   const licenses = state.status === "ready" ? state.licenses : EMPTY_LICENSES;
   const result = useMemo(
@@ -31,6 +33,19 @@ export function LicensePage() {
 
   function handleSaved(updated: License) {
     applyUpdate(updated);
+  }
+
+  // Clearing also has to drop a search draft that has not committed yet. The
+  // input cannot detect that on its own when the URL held no search to begin
+  // with, so it is remounted, the same way the drawer resets the seats form.
+  function handleClearFilters() {
+    params.clearFilters();
+    setSearchResetKey((key) => key + 1);
+  }
+
+  function handleRowClick(license: License) {
+    setSelectedId(license.id);
+    setIsDetailOpen(true);
   }
 
   return (
@@ -49,10 +64,11 @@ export function LicensePage() {
           <LicenseToolbar
             query={params.query}
             hasActiveFilters={params.hasActiveFilters}
+            searchResetKey={searchResetKey}
             onSearchChange={params.setSearch}
             onToggleStatus={params.toggleStatus}
             onTogglePlan={params.togglePlan}
-            onClearFilters={params.clearFilters}
+            onClearFilters={handleClearFilters}
           />
 
           <p className="text-sm text-muted-foreground" aria-live="polite">
@@ -68,7 +84,7 @@ export function LicensePage() {
           {state.status === "ready" && result.totalOverall === 0 ? (
             <EmptyState />
           ) : state.status === "ready" && result.totalMatching === 0 ? (
-            <NoResultsState onClearFilters={params.clearFilters} />
+            <NoResultsState onClearFilters={handleClearFilters} />
           ) : (
             <>
               <LicenseTable
@@ -77,7 +93,7 @@ export function LicensePage() {
                 sortDirection={params.query.sortDirection}
                 isLoading={state.status === "loading"}
                 onSort={params.setSort}
-                onRowClick={(license) => setSelectedId(license.id)}
+                onRowClick={handleRowClick}
               />
               {state.status === "ready" && (
                 <LicensePagination
@@ -92,12 +108,16 @@ export function LicensePage() {
         </>
       )}
 
+      {/*
+        Open state is tracked separately from the selection, because the sheet
+        plays an exit transition. Clearing the id on close would slide an empty
+        panel out. The record is still required, so a row that disappears from
+        the list closes the drawer rather than emptying it.
+      */}
       <LicenseDetailDrawer
         license={selected}
-        open={selected !== null}
-        onOpenChange={(open) => {
-          if (!open) setSelectedId(null);
-        }}
+        open={isDetailOpen && selected !== null}
+        onOpenChange={setIsDetailOpen}
         onSaved={handleSaved}
       />
     </main>

@@ -36,9 +36,15 @@ export interface LicenseListParams {
   hasActiveFilters: boolean;
 }
 
-/** Narrows an arbitrary string list to the members of a known union. */
+/**
+ * Narrows an arbitrary string list to the members of a known union. A
+ * hand-written `?status=Active&status=Active` should count once, not twice.
+ */
 function keepKnown<T extends string>(values: string[], allowed: readonly T[]): T[] {
-  return values.filter((value): value is T => (allowed as readonly string[]).includes(value));
+  const known = values.filter((value): value is T =>
+    (allowed as readonly string[]).includes(value),
+  );
+  return [...new Set(known)];
 }
 
 function parsePositiveInt(raw: string | null, fallback: number): number {

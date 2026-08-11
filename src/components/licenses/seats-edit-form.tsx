@@ -31,7 +31,14 @@ export function SeatsEditForm({
 
   const validation = validateSeatsAllowed(draft, license.seatsUsed);
   const isUnchanged = validation.ok && validation.value === license.seatsAllowed;
-  const validationError = validation.ok ? null : validation.error;
+
+  // Some accounts are already over their allowance (assumption A3), so an
+  // untouched form can hold a value the rules reject. Flagging the field before
+  // anything has been typed reads as a broken form rather than as guidance, and
+  // the drawer already states the over-provisioning above. Save stays disabled
+  // either way, so nothing invalid can be submitted while this is hidden.
+  const isEdited = draft.trim() !== String(license.seatsAllowed);
+  const validationError = validation.ok || !isEdited ? null : validation.error;
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
