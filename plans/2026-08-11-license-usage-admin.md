@@ -2287,12 +2287,15 @@ import { LicenseTable } from "./license-table";
 import { LicenseToolbar } from "./license-toolbar";
 import { EmptyState, ErrorState, NoResultsState } from "./states";
 
+const EMPTY_LICENSES: License[] = [];
+
 export function LicensePage() {
   const { state, refetch, applyUpdate } = useLicenses();
   const params = useLicenseListParams();
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const licenses = state.status === "ready" ? state.licenses : [];
+  // A module constant keeps the fallback reference stable for useMemo's dependency list.
+  const licenses = state.status === "ready" ? state.licenses : EMPTY_LICENSES;
   const result = useMemo(() => queryLicenses(licenses, params.query), [licenses, params.query]);
 
   // Read the selected row back out of the list so it reflects a saved edit.
