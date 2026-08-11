@@ -40,6 +40,10 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# take-home brief and private working notes (kept out of the public repo)
-/requirements
+# requirements/ is private by default. Only the scope document is tracked.
+/requirements/*
+!/requirements/scope.md
+
+# Local working notes and editor tooling
 CLAUDE.local.md
+/.serena
