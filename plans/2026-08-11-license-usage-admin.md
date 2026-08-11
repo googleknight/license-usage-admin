@@ -14,7 +14,7 @@
 - **Next.js version floor:** 16.3.0. This differs from older App Router conventions. **Read the relevant guide under `node_modules/next/dist/docs/` before writing framework code**, per the generated `AGENTS.md`. Do not write route handlers or async params from memory.
 - **TypeScript:** `strict: true`. No `any`. No non-null assertions (`!`) on values that can genuinely be absent.
 - **Styling:** Tailwind 4 + shadcn/ui only. No second styling system, no inline `<style>`, no CSS-in-JS.
-- **No new runtime dependencies** beyond shadcn/ui primitives and their Radix peers. No state library, no data-fetching library, no date library, no test framework (Bun has one built in).
+- **No new runtime dependencies** beyond shadcn/ui primitives and their Radix peers. No state library, no data-fetching library, no date library, no test framework (Bun has one built in). One devDependency is required: `@types/bun`, without which `bun:test` imports have no ambient types and `bunx tsc --noEmit` fails repo-wide. Install it with `bun add -d @types/bun` before the first test file lands.
 - **Dataset size:** 50 fixture records.
 - **"Expiring Soon" window:** 30 days.
 - **Seats upper bound:** `100000`.
@@ -323,7 +323,9 @@ Expected: `Wrote 50 fixtures to src/lib/licenses/fixtures.ts`
 
 - [ ] **Step 4: Verify the generated data holds its invariants**
 
-Run: `bun run --eval 'const {LICENSE_FIXTURES:f}=await import("./src/lib/licenses/fixtures.ts"); console.log("count",f.length); console.log("statuses",[...new Set(f.map(l=>l.status))]); console.log("plans",[...new Set(f.map(l=>l.plan))]); console.log("over-provisioned",f.filter(l=>l.seatsUsed>l.seatsAllowed).length); console.log("unique names",new Set(f.map(l=>l.customerName)).size);'`
+Run: `bun --eval 'const {LICENSE_FIXTURES:f}=await import("./src/lib/licenses/fixtures.ts"); console.log("count",f.length); console.log("statuses",[...new Set(f.map(l=>l.status))]); console.log("plans",[...new Set(f.map(l=>l.plan))]); console.log("over-provisioned",f.filter(l=>l.seatsUsed>l.seatsAllowed).length); console.log("unique names",new Set(f.map(l=>l.customerName)).size);'`
+
+Note: `bun --eval`, not `bun run --eval`. The latter expects a file or a package script and prints the usage banner instead.
 
 Expected: count 50, all four statuses present, all three plans present, over-provisioned count above 0, unique names 50.
 
