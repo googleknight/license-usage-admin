@@ -937,9 +937,12 @@ const SIMULATED_LATENCY_MS = 500;
 const sleep = (ms: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
+// RouteContext is a globally available generated helper (from next dev / build /
+// typegen) that derives typed params from the route literal. Equivalent to writing
+// { params: Promise<{ id: string }> } by hand, and version-correct for Next 16.
 export async function PATCH(
   request: Request,
-  context: { params: Promise<{ id: string }> },
+  context: RouteContext<"/api/licenses/[id]">,
 ): Promise<Response> {
   const { id } = await context.params;
   const { searchParams } = new URL(request.url);
@@ -1171,7 +1174,14 @@ export function useLicenseListParams() {
 
     setPage: (page: number) => write({ ...query, page }),
     setPageSize: (pageSize: number) => write({ ...query, pageSize, page: 1 }),
-    clearFilters: () => write({ ...DEFAULT_QUERY, sortField: query.sortField, sortDirection: query.sortDirection }),
+    // Sort and page size are display preferences, not filters, so both survive a clear.
+    clearFilters: () =>
+      write({
+        ...DEFAULT_QUERY,
+        sortField: query.sortField,
+        sortDirection: query.sortDirection,
+        pageSize: query.pageSize,
+      }),
 
     hasActiveFilters:
       query.search.trim() !== "" || query.statuses.length > 0 || query.plans.length > 0,
@@ -1240,8 +1250,11 @@ export function useLicenses() {
   const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
+    // Do NOT call setState({ status: "loading" }) synchronously here. React 19's
+    // react-hooks/set-state-in-effect lint rule rejects it as a cascading render.
+    // The initial state is already "loading", and refetch resets it before bumping
+    // the attempt counter, so every run of this effect starts from loading anyway.
     const controller = new AbortController();
-    setState({ status: "loading" });
 
     async function load() {
       try {
@@ -1270,7 +1283,10 @@ export function useLicenses() {
     return () => controller.abort();
   }, [attempt]);
 
-  const refetch = useCallback(() => setAttempt((value) => value + 1), []);
+  const refetch = useCallback(() => {
+    setState({ status: "loading" });
+    setAttempt((value) => value + 1);
+  }, []);
 
   /** Replaces one row after a successful save, without refetching the list. */
   const applyUpdate = useCallback((updated: License) => {
@@ -1468,6 +1484,11 @@ git commit -m "feat: add shadcn primitives, date formatting, and status badges"
 **Interfaces:**
 - Consumes: shadcn `Button`, `Skeleton`, `Table` primitives from Task 7
 - Produces: `<ErrorState message onRetry />`, `<EmptyState />`, `<NoResultsState onClearFilters />`, `<LicenseTableSkeleton rows />`
+
+> **Client boundary:** neither file carries a `"use client"` directive, and they do not need one
+> as long as the only consumer is `license-page.tsx`, which is itself a client component. They
+> take function props and render Base UI's client-only `Button`, so a server component importing
+> them directly would fail. Add the directive if that ever changes.
 
 - [ ] **Step 1: Write the state components**
 
